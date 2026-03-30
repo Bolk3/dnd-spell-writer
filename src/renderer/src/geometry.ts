@@ -49,52 +49,57 @@ class Join {
 		linear ? this.linear = true : this.linear = false;
 		color ? this.color = color : this.color = "rgb(0,0,0)";
 		strokeWidth ? this.strokeWidth = strokeWidth : this.strokeWidth = 5;
+	}	
+
+	getCoords(p1:Circle | [number, number]): [number, number]{
+		if (p1 instanceof Circle)
+			return [p1.xCenter, p1.yCenter];
+		return (p1);
 	}
-
-	private getCoords(p: [number, number] | Circle): { x: number, y: number } {
-		if (Array.isArray(p)) {
-			return { x: p[0], y: p[1] };
-		}
-		return { x: p.xCenter, y: p.yCenter };
-	}
-
-	getLinearDistance(p1:[x:number, y:number] | Circle,
-					  p2:[x:number, y:number] | Circle): number
-	{
-		var coord1: {x:number, y:number}, coord2: {x:number, y:number};
-
-		coord1 = this.getCoords(p1);
-		coord2 = this.getCoords(p2);
-		const pointX = (coord2.x - coord1.x)**2;
-		const pointY = (coord2.y - coord1.y)**2;
-		return (Math.sqrt(pointX + pointY));
-	}
-
-	getIntersection(c1: [number, number] | Circle,
-					r1: number,
-					c2: [number, number] | Circle,
-					r2: number
-				   ): {pointA: [number, number], pointB: [number, number]} {
-		const p1 = this.getCoords(c1);
-		const p2 = this.getCoords(c2);
-		const dx = p2.x - p1.x;
-		const dy = p2.y - p1.y;
-		const dist = Math.sqrt(dx * dx + dy * dy);
-		if (dist === 0) return { pointA: [p1.x, p1.y], pointB: [p2.x, p2.y] };
-		const ux = dx / dist;
-		const uy = dy / dist;
-		const pointA: [number, number] = [
-			p1.x + ux * r1,
-			p1.y + uy * r1
+	
+	getIntersect(c1: Circle ,
+				 c2: Circle ,
+				): [[number, number],[number, number]] {
+		// get radius
+		const radius1 = c1.radius;
+		const radius2 = c2.radius;
+		// get center of circle
+		const center1 = this.getCoords(c1);
+		const center2 = this.getCoords(c2);
+		// get director vector u
+		const uX = center2[0] - center1[0];
+		const uY = center2[1] - center1[1];
+		// get normal
+		const norm = Math.sqrt((uX**2) + (uY**2));
+		if (norm === 0) return [center1, center2];
+		// get unit vector
+		const vX = uX / norm;
+		const vY = uY / norm;
+		// return unit vector * radius for each
+		let r1: [number, number] = [
+			center1[0] + vX * radius1,
+			center1[1] + vY * radius1
 		];
-		const pointB: [number, number] = [
-			p2.x - ux * r2,
-			p2.y - uy * r2
+
+		let r2: [number, number] = [
+			center2[0] - vX * radius2,
+			center2[1] - vY * radius2
 		];
-		return { pointA, pointB };
+		return [r1, r2];
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
+		const intersect = this.getIntersect(this.node1, this.node2);
+		ctx.lineWidth = this.strokeWidth;
+		ctx.strokeStyle = this.color;
+		ctx.beginPath();
+		if (this.linear) {
+			ctx.moveTo(intersect[0][0], intersect[0][1]);
+			ctx.lineTo(intersect[1][0], intersect[1][1]);
+		} else {
+
+		}
+		ctx.stroke();
 	}
 }
 
