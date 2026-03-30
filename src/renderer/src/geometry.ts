@@ -29,7 +29,6 @@ class Circle {
 }
 
 class Join {
-	center:			[x:number, y:number];
 	node1:			Circle;
 	node2:			Circle;
 	linear:			boolean;
@@ -38,14 +37,12 @@ class Join {
 	
 	constructor(node1: Circle,
 				node2: Circle,
-				center: [x:number, y:number],
 				color?:string,
 				linear?: boolean,
 				strokeWidth?: number)
 	{
 		this.node1 = node1;
 		this.node2 = node2;
-		this.center = center;
 		linear ? this.linear = true : this.linear = false;
 		color ? this.color = color : this.color = "rgb(0,0,0)";
 		strokeWidth ? this.strokeWidth = strokeWidth : this.strokeWidth = 5;
@@ -55,6 +52,19 @@ class Join {
 		if (p1 instanceof Circle)
 			return [p1.xCenter, p1.yCenter];
 		return (p1);
+	}
+
+	getDistance(p1: [number, number] | Circle,
+				p2: [number, number] | Circle
+			   ): number {
+		let [x1, y1] = this.getCoords(p1);
+		let [x2, y2] = this.getCoords(p2);
+
+		let uX = x2 - x1;
+		let uY = y2 - y1;
+
+		let norm = Math.sqrt((uX**2) + (uY**2));
+		return (norm);
 	}
 	
 	getIntersect(c1: Circle ,
@@ -88,8 +98,64 @@ class Join {
 		return [r1, r2];
 	}
 
+	calcArcCenter(p1: [number, number] | Circle,
+				  p2: [number, number] | Circle,
+				  r: number
+				 ) : [number, number] {
+		const [x1, y1] = this.getCoords(p1);
+		const [x2, y2] = this.getCoords(p2);
+
+		const mX = (x1 + x2)/2;
+		const mY = (y1 + y2)/2;
+
+		const dx = x2 - x1;
+		const dy = y2 - y1;
+		const d = Math.sqrt(dx*dx + dy*dy);
+		if (d > 2 * r) throw new Error("too small radius");
+		const h = Math.sqrt(r*r - (d/2)**2);
+
+		const ux = -dy / d;
+		const uy = dx / d;
+
+		return [
+			mX + h * ux,
+			mY + h * uy
+		]
+	}
+
+	getAngle(A: [number, number],
+			 B: [number, number],
+			 C: [number, number]
+			){
+		const [cx, cy] = C;
+		const [bx, by] = B;
+		const [ax, ay] = A;
+
+		const startAngle = Math.atan2(ay - cy, ax - cx);
+		const endAngle = Math.atan2(by - cy, bx - cx);
+
+		let diff = endAngle - startAngle;
+
+		if (diff > Math.PI) diff -= 2 * Math.PI;
+		if (diff < -Math.PI) diff += 2 * Math.PI;
+
+		return {
+			startAngle,
+			endAngle,
+			diff
+		};
+	}
+
+	toRad(x: number) {
+		return (x * (Math.PI/180));
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
 		const intersect = this.getIntersect(this.node1, this.node2);
+		const arcCenter = this.calcArcCenter(intersect[0], 
+											 intersect[1],
+											 this.getDistance(intersect[0], intersect[1]));
+		const arcAngle = this.getAngle(intersect[0], intersect[1], arcCenter);
 		ctx.lineWidth = this.strokeWidth;
 		ctx.strokeStyle = this.color;
 		ctx.beginPath();
@@ -97,7 +163,12 @@ class Join {
 			ctx.moveTo(intersect[0][0], intersect[0][1]);
 			ctx.lineTo(intersect[1][0], intersect[1][1]);
 		} else {
-
+			ctx.arc(arcCenter[0],
+					arcCenter[1], 
+					this.getDistance(intersect[0], arcCenter),
+				   arcAngle.startAngle,
+				   arcAngle.endAngle
+				   );
 		}
 		ctx.stroke();
 	}

@@ -5,8 +5,8 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const circle1 = new Circle(50, 300, 30, "rgb(255,0,0)");
-const circle2 = new Circle(100, 60, 30, "rgb(255,255,255)");
-const joint = new Join(circle1, circle2, [100, 200], "rgb(0,0,0)", true);
+const circle2 = new Circle(500, 60, 30, "rgb(255,255,255)");
+const joint = new Join(circle1, circle2,"rgb(0,0,0)", true);
 circle1.draw(ctx);
 circle2.draw(ctx);
 joint.draw(ctx);
